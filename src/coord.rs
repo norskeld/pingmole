@@ -66,8 +66,6 @@ impl Coord {
     let hav_delta_lam = phi1.cos() * phi2.cos() * haversine(lam2 - lam1);
     let hav_delta = hav_delta_phi + hav_delta_lam;
 
-    let distance = (2.0 * R * hav_delta.sqrt().asin() * 1_000.0).round() / 1_000.0;
-
-    distance
+    (2.0 * R * hav_delta.sqrt().asin() * 1_000.0).round() / 1_000.0
   }
 }

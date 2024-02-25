@@ -113,7 +113,7 @@ impl RelaysLoader {
       for city in get!(country, "cities", as_array) {
         for relay in get!(city, "relays", as_array) {
           // We only need relays that have either "openvpn" or "wireguard" protocols.
-          if let Some(protocol) = Self::resolve_protocol(&relay) {
+          if let Some(protocol) = Self::resolve_protocol(relay) {
             let coord = Coord::new(
               get!(city, "latitude", as_f64),
               get!(city, "longitude", as_f64),

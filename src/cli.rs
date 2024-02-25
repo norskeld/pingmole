@@ -79,3 +79,9 @@ impl Spinner {
     self.spinner.finish_and_clear();
   }
 }
+
+impl Default for Spinner {
+  fn default() -> Self {
+    Self::new()
+  }
+}
