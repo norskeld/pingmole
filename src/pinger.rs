@@ -80,8 +80,8 @@ impl RelayTimed {
     &self.timings
   }
 
-  /// Gets the average RTT.
-  pub fn rtt(&self) -> Option<Duration> {
+  /// Gets the mean RTT.
+  pub fn rtt_mean(&self) -> Option<Duration> {
     match self.timings.len() {
       | 0 => None,
       | len => Some(self.timings.iter().sum::<Duration>() / len as u32),
@@ -183,6 +183,7 @@ impl RelaysPinger {
     Self { tasks, filters }
   }
 
+  /// Execute all pings.
   pub async fn ping(self) -> Result<Vec<RelayTimed>, RelaysPingerError> {
     let mut results = Vec::new();
 

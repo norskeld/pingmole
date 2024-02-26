@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 use std::time::Duration;
 
-use crate::coord::Coord;
 use crate::pinger::RelayTimed;
 use crate::relays::{Protocol, Relay};
 
@@ -27,15 +26,13 @@ pub trait Filter: Debug {
 /// Filter by distance. The distance is in kilometers.
 #[derive(Debug)]
 pub struct FilterByDistance {
-  /// Current coordinates.
-  coord: Coord,
   /// Distance in kilometers.
   distance: f64,
 }
 
 impl FilterByDistance {
-  pub fn new(coord: Coord, distance: f64) -> Self {
-    Self { coord, distance }
+  pub fn new(distance: f64) -> Self {
+    Self { distance }
   }
 }
 
@@ -47,7 +44,7 @@ impl Filter for FilterByDistance {
   }
 
   fn matches(&self, relay: &Self::Item) -> bool {
-    relay.coord.distance_to(&self.coord) < self.distance
+    relay.distance < self.distance
   }
 }
 
@@ -104,7 +101,7 @@ impl Filter for FilterByRTT {
     self.rtt.map_or(true, |filter_rtt| {
       // Otherwise, we compare the measured RTT with the filter RTT, but here we default to `false`.
       timings
-        .rtt()
+        .rtt_mean()
         .map_or(false, |relay_rtt| relay_rtt <= filter_rtt)
     })
   }

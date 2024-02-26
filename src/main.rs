@@ -7,7 +7,8 @@ use pingmole::cli::{Cli, Spinner};
 use pingmole::coord::Coord;
 use pingmole::filters::{FilterByDistance, FilterByProtocol, FilterByRTT};
 use pingmole::pinger::{RelayPingerConfig, RelaysPinger};
-use pingmole::relays::RelaysLoader;
+use pingmole::relays::{RelaysLoader, RelaysLoaderConfig};
+use pingmole::reporter::Reporter;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
@@ -19,7 +20,7 @@ async fn main() -> anyhow::Result<()> {
 
   spinner.set_message("Getting current location");
 
-  let user = match cli.latitude.zip(cli.longitude) {
+  let location = match cli.latitude.zip(cli.longitude) {
     | Some((latitude, longitude)) => Coord::new(latitude, longitude),
     | None => Coord::fetch().await?,
   };
@@ -33,8 +34,9 @@ async fn main() -> anyhow::Result<()> {
 
   let loader = RelaysLoader::new(
     RelaysLoader::resolve_path()?,
+    RelaysLoaderConfig { location },
     vec![
-      Box::new(FilterByDistance::new(user, cli.distance as f64)),
+      Box::new(FilterByDistance::new(cli.distance as f64)),
       Box::new(FilterByProtocol::new(cli.protocol)),
     ],
   );
@@ -70,16 +72,10 @@ async fn main() -> anyhow::Result<()> {
 
   spinner.stop();
 
-  for timed in timings {
-    let relay = timed.relay();
-    let rtt = timed.rtt().unwrap_or(Duration::default());
-    let rtt_median = timed.rtt_median().unwrap_or(Duration::default());
+  let mut reporter = Reporter::new(timings, cli.sort_by.unwrap_or_default());
 
-    println!(
-      "{} rtt={:.2?} median={:.2?} ({} pings)",
-      relay.ip, rtt, rtt_median, cli.count
-    );
-  }
+  reporter.sort();
+  reporter.report();
 
   Ok(())
 }

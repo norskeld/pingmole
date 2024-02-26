@@ -13,7 +13,7 @@ pub enum CoordError {
 }
 
 /// Represents a point on Earth.
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
 pub struct Coord {
   latitude: f64,
   longitude: f64,

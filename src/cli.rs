@@ -5,12 +5,13 @@ use clap::{Parser, ValueEnum};
 use indicatif::{ProgressBar, ProgressStyle};
 
 use crate::relays::Protocol;
+use crate::reporter::SortBy;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]
 pub struct Cli {
   /// Filter servers by used protocol.
-  #[arg(short, long, value_parser = clap::value_parser!(Protocol))]
+  #[arg(short, long, value_enum)]
   pub protocol: Option<Protocol>,
 
   /// Filter servers by maximum physical distance (in km).
@@ -20,6 +21,10 @@ pub struct Cli {
   /// Filter servers by maximum rtt (in ms).
   #[arg(short, long)]
   pub rtt: Option<u64>,
+
+  /// Sort by specified field.
+  #[arg(short, long, value_enum)]
+  pub sort_by: Option<SortBy>,
 
   /// Set pings count to perform.
   #[arg(short, long, default_value_t = 8)]
@@ -34,11 +39,11 @@ pub struct Cli {
   pub interval: u64,
 
   /// Set the latitude.
-  #[arg(long, requires = "longitude")]
+  #[arg(long = "lat", requires = "longitude")]
   pub latitude: Option<f64>,
 
   /// Set the longitude.
-  #[arg(long, requires = "latitude")]
+  #[arg(long = "lon", requires = "latitude")]
   pub longitude: Option<f64>,
 }
 
@@ -51,6 +56,28 @@ impl ValueEnum for Protocol {
     Some(match self {
       | Protocol::OpenVPN => PossibleValue::new("openvpn"),
       | Protocol::WireGuard => PossibleValue::new("wireguard"),
+    })
+  }
+}
+
+impl ValueEnum for SortBy {
+  fn value_variants<'a>() -> &'a [Self] {
+    &[
+      Self::Country,
+      Self::City,
+      Self::MedianRTT,
+      Self::MeanRTT,
+      Self::Distance,
+    ]
+  }
+
+  fn to_possible_value(&self) -> Option<PossibleValue> {
+    Some(match self {
+      | SortBy::Country => PossibleValue::new("country"),
+      | SortBy::City => PossibleValue::new("city"),
+      | SortBy::MedianRTT => PossibleValue::new("rtt_median"),
+      | SortBy::MeanRTT => PossibleValue::new("rtt_mean"),
+      | SortBy::Distance => PossibleValue::new("distance"),
     })
   }
 }

@@ -1,5 +1,5 @@
 use std::env::consts;
-use std::fmt::Debug;
+use std::fmt::{self, Debug, Display};
 use std::fs;
 use std::path::PathBuf;
 
@@ -25,10 +25,19 @@ pub enum RelaysError {
   UnsupportedSystem(String),
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
 pub enum Protocol {
   OpenVPN,
   WireGuard,
+}
+
+impl Display for Protocol {
+  fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+    match self {
+      | Protocol::OpenVPN => write!(f, "OpenVPN"),
+      | Protocol::WireGuard => write!(f, "WireGuard"),
+    }
+  }
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -40,19 +49,36 @@ pub struct Relay {
   pub protocol: Protocol,
   pub is_active: bool,
   pub is_mullvad_owned: bool,
+  pub distance: f64,
+}
+
+#[derive(Debug)]
+pub struct RelaysLoaderConfig {
+  /// Current user location.
+  pub location: Coord,
 }
 
 #[derive(Debug)]
 pub struct RelaysLoader {
   /// Path to the relay file.
   path: PathBuf,
+  /// Configuration/additional data needed for loading.
+  config: RelaysLoaderConfig,
   /// Filters to apply to the loaded relays.
   filters: Vec<Box<dyn Filter<Item = Relay>>>,
 }
 
 impl RelaysLoader {
-  pub fn new(path: PathBuf, filters: Vec<Box<dyn Filter<Item = Relay>>>) -> Self {
-    Self { path, filters }
+  pub fn new(
+    path: PathBuf,
+    config: RelaysLoaderConfig,
+    filters: Vec<Box<dyn Filter<Item = Relay>>>,
+  ) -> Self {
+    Self {
+      path,
+      config,
+      filters,
+    }
   }
 
   /// Returns the path to the relay file.
@@ -123,9 +149,12 @@ impl RelaysLoader {
               get!(city, "longitude", as_f64),
             );
 
+            let distance = self.config.location.distance_to(&coord);
+
             let relay = Relay {
               coord,
               protocol,
+              distance,
               ip: get!(relay, "ipv4_addr_in", as_str).to_string(),
               city: get!(city, "name", as_str).to_string(),
               country: get!(country, "name", as_str).to_string(),
@@ -133,11 +162,13 @@ impl RelaysLoader {
               is_mullvad_owned: get!(relay, "owned", as_bool),
             };
 
-            if self
-              .filters
-              .iter()
-              .filter(|filter| filter.stage() == FilterStage::Load)
-              .all(|filter| filter.matches(&relay))
+            // There's no reason to filter inactive relays.
+            if relay.is_active
+              && self
+                .filters
+                .iter()
+                .filter(|filter| filter.stage() == FilterStage::Load)
+                .all(|filter| filter.matches(&relay))
             {
               locations.push(relay);
             }
