@@ -19,21 +19,25 @@ pub struct Cli {
 
   /// Filter servers by maximum rtt (in ms).
   #[arg(short, long)]
-  pub rtt: Option<usize>,
+  pub rtt: Option<u64>,
 
-  /// How many pings to send for each relay.
-  #[arg(short, long, default_value_t = 4)]
+  /// Set pings count to perform.
+  #[arg(short, long, default_value_t = 8)]
   pub count: usize,
 
-  /// Specify ping timeout (in ms).
+  /// Set ping timeout (in ms).
   #[arg(long, default_value_t = 750)]
   pub timeout: u64,
 
-  /// Specify the latitude.
+  /// Set ping interval (in ms).
+  #[arg(long, default_value_t = 1000)]
+  pub interval: u64,
+
+  /// Set the latitude.
   #[arg(long, requires = "longitude")]
   pub latitude: Option<f64>,
 
-  /// Specify the longitude.
+  /// Set the longitude.
   #[arg(long, requires = "latitude")]
   pub longitude: Option<f64>,
 }

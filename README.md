@@ -6,11 +6,12 @@ CLI that helps to filter Mullvad servers and pick the closest one.
 
 ## Features
 
-- [x] Ping matching Mullvad relays and print the results.
 - [x] Filter servers by:
-  - [ ] Ping round-trip time;
+  - [x] Ping round-trip time;
   - [x] Used protocol: OpenVPN or WireGuard;
   - [x] Distance from the current location;
+- [x] Ping matching Mullvad relays.
+- [ ] Print the results in a table.
 
 Pinging is done using TCP, not ICMP. Reasons:
 

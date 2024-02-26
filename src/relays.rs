@@ -44,15 +44,18 @@ pub struct Relay {
 
 #[derive(Debug)]
 pub struct RelaysLoader {
+  /// Path to the relay file.
   path: PathBuf,
-  filters: Vec<Box<dyn Filter>>,
+  /// Filters to apply to the loaded relays.
+  filters: Vec<Box<dyn Filter<Item = Relay>>>,
 }
 
 impl RelaysLoader {
-  pub fn new(path: PathBuf, filters: Vec<Box<dyn Filter>>) -> Self {
+  pub fn new(path: PathBuf, filters: Vec<Box<dyn Filter<Item = Relay>>>) -> Self {
     Self { path, filters }
   }
 
+  /// Returns the path to the relay file.
   pub fn resolve_path() -> Result<PathBuf, RelaysError> {
     let path = match consts::OS {
       | "linux" => "/var/cache/mullvad-vpn/relays.json",
@@ -86,6 +89,7 @@ impl RelaysLoader {
     }
   }
 
+  /// Loads the relays from the relay file.
   pub fn load(&self) -> Result<Vec<Relay>, RelaysError> {
     /// Simple macro helper to simplify accessing JSON fields and casting them.
     macro_rules! get {

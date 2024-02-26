@@ -1,11 +1,12 @@
+use std::sync::Arc;
 use std::thread;
 use std::time::Duration;
 
 use clap::Parser;
 use pingmole::cli::{Cli, Spinner};
 use pingmole::coord::Coord;
-use pingmole::filters::{FilterByDistance, FilterByProtocol};
-use pingmole::pinger::RelayPinger;
+use pingmole::filters::{FilterByDistance, FilterByProtocol, FilterByRTT};
+use pingmole::pinger::{RelayPingerConfig, RelaysPinger};
 use pingmole::relays::RelaysLoader;
 
 #[tokio::main]
@@ -15,6 +16,7 @@ async fn main() -> anyhow::Result<()> {
 
   // -----------------------------------------------------------------------------------------------
   // 1. Get the current location, either via arguments or via Mullvad API.
+
   spinner.set_message("Getting current location");
 
   let user = match cli.latitude.zip(cli.longitude) {
@@ -26,6 +28,7 @@ async fn main() -> anyhow::Result<()> {
 
   // -----------------------------------------------------------------------------------------------
   // 2. Load relays from file and filter them.
+
   spinner.set_message("Loading relays");
 
   let loader = RelaysLoader::new(
@@ -42,29 +45,41 @@ async fn main() -> anyhow::Result<()> {
 
   // -----------------------------------------------------------------------------------------------
   // 3. Ping relays.
+
   spinner.set_message("Pinging relays");
 
-  let mut tasks = Vec::new();
-  let mut timings = Vec::new();
+  let config = Arc::new(
+    RelayPingerConfig::new()
+      .set_count(cli.count)
+      .set_timeout(Duration::from_millis(cli.timeout))
+      .set_interval(Duration::from_millis(cli.interval)),
+  );
 
-  for relay in relays {
-    let mut pinger = RelayPinger::new(relay);
+  let pinger = RelaysPinger::new(
+    relays,
+    config,
+    vec![Box::new(FilterByRTT::new(
+      cli.rtt.map(Duration::from_millis),
+    ))],
+  );
 
-    pinger.set_count(cli.count);
-    pinger.set_timeout(Duration::from_millis(cli.timeout));
-
-    tasks.push(tokio::spawn(pinger.execute()));
-  }
-
-  for task in tasks {
-    timings.push(task.await?);
-  }
+  let timings = pinger.ping().await?;
 
   // -----------------------------------------------------------------------------------------------
   // 4. Print results.
+
   spinner.stop();
 
-  dbg!(timings);
+  for timed in timings {
+    let relay = timed.relay();
+    let rtt = timed.rtt().unwrap_or(Duration::default());
+    let rtt_median = timed.rtt_median().unwrap_or(Duration::default());
+
+    println!(
+      "{} rtt={:.2?} median={:.2?} ({} pings)",
+      relay.ip, rtt, rtt_median, cli.count
+    );
+  }
 
   Ok(())
 }
