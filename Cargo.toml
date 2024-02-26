@@ -1,7 +1,7 @@
 [package]
 name = "pingmole"
 version = "0.1.0"
-description = "Simple CLI that helps to filter and pick the closest Mullvad server."
+description = "CLI that helps to filter Mullvad servers and pick the closest one."
 authors = ["Vladislav Mamon <hello@vm.codes>"]
 edition = "2021"
 

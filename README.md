@@ -2,7 +2,7 @@
 
 [![Checks](https://img.shields.io/github/actions/workflow/status/norskeld/pingmole/checks.yml?style=flat-square&colorA=22272d&colorB=22272d&label=checks)](https://github.com/norskeld/pingmole/actions/workflows/checks.yml)
 
-Simple CLI that helps to filter Mullvad servers and pick the closest one.
+CLI that helps to filter Mullvad servers and pick the closest one.
 
 ## Features
 
