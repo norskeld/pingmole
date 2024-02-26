@@ -48,7 +48,7 @@ impl Coord {
       .ok_or_else(|| CoordError::GetCoordsFailed)
   }
 
-  /// Finds the distance (in meters) between two coordinates using the haversine formula.
+  /// Finds the distance (in kilometers) between two coordinates using the haversine formula.
   pub fn distance_to(&self, other: &Self) -> f64 {
     // Earth radius in meters. This is *average*, since Earth is not a sphere, but a spheroid.
     const R: f64 = 6_371_000f64;
@@ -66,6 +66,9 @@ impl Coord {
     let hav_delta_lam = phi1.cos() * phi2.cos() * haversine(lam2 - lam1);
     let hav_delta = hav_delta_phi + hav_delta_lam;
 
-    (2.0 * R * hav_delta.sqrt().asin() * 1_000.0).round() / 1_000.0
+    // The distance in meters.
+    let distance = (2.0 * R * hav_delta.sqrt().asin() * 1_000.0).round() / 1_000.0;
+
+    distance / 1_000.0
   }
 }

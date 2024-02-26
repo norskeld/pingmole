@@ -14,7 +14,7 @@ async fn main() -> anyhow::Result<()> {
   let spinner = Spinner::new();
 
   // -----------------------------------------------------------------------------------------------
-  // 1. Get current location, either via arguments or via Mullvad API.
+  // 1. Get the current location, either via arguments or via Mullvad API.
   spinner.set_message("Getting current location");
 
   let user = match cli.latitude.zip(cli.longitude) {
@@ -41,7 +41,7 @@ async fn main() -> anyhow::Result<()> {
   thread::sleep(std::time::Duration::from_secs(1));
 
   // -----------------------------------------------------------------------------------------------
-  // 3. Pinging relays.
+  // 3. Ping relays.
   spinner.set_message("Pinging relays");
 
   let mut tasks = Vec::new();

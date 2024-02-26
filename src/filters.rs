@@ -20,15 +20,16 @@ pub trait Filter: Debug {
   fn matches(&self, relay: &Relay) -> bool;
 }
 
+/// Filter by distance. The distance is in kilometers.
 #[derive(Debug)]
 pub struct FilterByDistance {
-  user: Coord,
+  coord: Coord,
   distance: f64,
 }
 
 impl FilterByDistance {
-  pub fn new(user: Coord, distance: f64) -> Self {
-    Self { user, distance }
+  pub fn new(coord: Coord, distance: f64) -> Self {
+    Self { coord, distance }
   }
 }
 
@@ -38,16 +39,19 @@ impl Filter for FilterByDistance {
   }
 
   fn matches(&self, relay: &Relay) -> bool {
-    (relay.coord.distance_to(&self.user) / 1_000.0) < self.distance
+    relay.coord.distance_to(&self.coord) < self.distance
   }
 }
 
+/// Filter by protocol. `None` means any protocol.
 #[derive(Debug)]
-pub struct FilterByProtocol(Option<Protocol>);
+pub struct FilterByProtocol {
+  protocol: Option<Protocol>,
+}
 
 impl FilterByProtocol {
   pub fn new(protocol: Option<Protocol>) -> Self {
-    Self(protocol)
+    Self { protocol }
   }
 }
 
@@ -58,8 +62,8 @@ impl Filter for FilterByProtocol {
 
   fn matches(&self, relay: &Relay) -> bool {
     self
-      .0
+      .protocol
       .as_ref()
-      .map_or(true, |use_protocol| relay.protocol == *use_protocol)
+      .map_or(true, |protocol| relay.protocol == *protocol)
   }
 }
