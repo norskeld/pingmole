@@ -4,20 +4,9 @@ use std::time::Duration;
 use crate::pinger::RelayTimed;
 use crate::relays::{Protocol, Relay};
 
-#[derive(PartialEq)]
-pub enum FilterStage {
-  /// Such filters apply when loading them from the relays file.
-  Load,
-  /// Such filters apply after pinging relays.
-  Ping,
-}
-
 /// Filter trait to dynamically dispatch filters.
 pub trait Filter: Debug {
   type Item;
-
-  /// Returns the stage of the filter.
-  fn stage(&self) -> FilterStage;
 
   /// Filter predicate.
   fn matches(&self, item: &Self::Item) -> bool;
@@ -39,10 +28,6 @@ impl FilterByDistance {
 impl Filter for FilterByDistance {
   type Item = Relay;
 
-  fn stage(&self) -> FilterStage {
-    FilterStage::Load
-  }
-
   fn matches(&self, relay: &Self::Item) -> bool {
     relay.distance < self.distance
   }
@@ -63,10 +48,6 @@ impl FilterByProtocol {
 
 impl Filter for FilterByProtocol {
   type Item = Relay;
-
-  fn stage(&self) -> FilterStage {
-    FilterStage::Load
-  }
 
   fn matches(&self, relay: &Self::Item) -> bool {
     self
@@ -91,10 +72,6 @@ impl FilterByRTT {
 
 impl Filter for FilterByRTT {
   type Item = RelayTimed;
-
-  fn stage(&self) -> FilterStage {
-    FilterStage::Ping
-  }
 
   fn matches(&self, timings: &Self::Item) -> bool {
     // If `rtt` is `None`, then it means any RTT, so we then default to `true`.

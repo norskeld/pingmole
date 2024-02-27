@@ -7,7 +7,7 @@ use serde_json::Value;
 use thiserror::Error;
 
 use crate::coord::Coord;
-use crate::filters::{Filter, FilterStage};
+use crate::filters::Filter;
 
 #[derive(Debug, Error)]
 pub enum RelaysError {
@@ -162,13 +162,7 @@ impl RelaysLoader {
             };
 
             // There's no reason to filter inactive relays.
-            if relay.is_active
-              && self
-                .filters
-                .iter()
-                .filter(|filter| filter.stage() == FilterStage::Load)
-                .all(|filter| filter.matches(&relay))
-            {
+            if relay.is_active && self.filters.iter().all(|filter| filter.matches(&relay)) {
               locations.push(relay);
             }
           }

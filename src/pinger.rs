@@ -5,7 +5,7 @@ use tokio::net::TcpStream;
 use tokio::task::JoinHandle;
 use tokio::time::{self, Duration, Instant, MissedTickBehavior};
 
-use crate::filters::{Filter, FilterStage};
+use crate::filters::Filter;
 use crate::relays::Relay;
 
 #[derive(Debug, Error)]
@@ -192,12 +192,7 @@ impl RelaysPinger {
         .await
         .map_err(|_| RelaysPingerError::PingerAwaitFailed)?;
 
-      if self
-        .filters
-        .iter()
-        .filter(|filter| filter.stage() == FilterStage::Ping)
-        .all(|filter| filter.matches(&timings))
-      {
+      if self.filters.iter().all(|filter| filter.matches(&timings)) {
         results.push(timings);
       }
     }
