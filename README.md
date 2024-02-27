@@ -12,7 +12,7 @@ CLI that helps to filter [Mullvad] servers and pick the closest one.
 
 ### From source (Cargo)
 
-Make sure to [install Rust toolchain][rust-toolchain] first. After that you can install rsx via **Cargo**:
+Make sure to [install Rust toolchain][rust-toolchain] first. After that you can install pingmole via **Cargo**:
 
 ```shell
 cargo install --locked --git https://github.com/norskeld/pingmole
