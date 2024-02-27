@@ -3,7 +3,6 @@ use std::fmt::{self, Debug, Display};
 use std::fs;
 use std::path::PathBuf;
 
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
 
@@ -25,7 +24,7 @@ pub enum RelaysError {
   UnsupportedSystem(String),
 }
 
-#[derive(Clone, Copy, Debug, Serialize, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub enum Protocol {
   OpenVPN,
   WireGuard,
@@ -40,7 +39,7 @@ impl Display for Protocol {
   }
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug)]
 pub struct Relay {
   pub ip: String,
   pub city: String,

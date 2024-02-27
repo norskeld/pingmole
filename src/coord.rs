@@ -1,4 +1,3 @@
-use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
 
@@ -13,7 +12,7 @@ pub enum CoordError {
 }
 
 /// Represents a point on Earth.
-#[derive(Clone, Copy, Debug, Serialize, Deserialize)]
+#[derive(Clone, Copy, Debug)]
 pub struct Coord {
   latitude: f64,
   longitude: f64,
