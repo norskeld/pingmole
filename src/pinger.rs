@@ -76,10 +76,6 @@ impl RelayTimed {
     &self.relay
   }
 
-  pub fn timings(&self) -> &Vec<Duration> {
-    &self.timings
-  }
-
   /// Gets the mean RTT.
   pub fn rtt_mean(&self) -> Option<Duration> {
     match self.timings.len() {
