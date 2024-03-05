@@ -33,6 +33,10 @@ cargo install --locked --git https://github.com/norskeld/pingmole
 - [x] Ping matching Mullvad relays.
 - [x] Print results in a table.
 
+## Distance calculation
+
+Distance is calculated using the [haversine formula][haversine]. This has some implications on the correctness of the results, but generally it's good enough.
+
 ## Pinging
 
 > [!NOTE]\
@@ -52,3 +56,4 @@ Pinging is done using TCP, not ICMP. Reasons:
 
 [mullvad]: https://mullvad.net
 [rust-toolchain]: https://rust-lang.org/tools/install
+[haversine]: https://en.wikipedia.org/wiki/Haversine_formula
