@@ -16,7 +16,7 @@ pub enum RelaysPingerError {
 
 #[derive(Debug)]
 pub struct RelayPingerConfig {
-  /// How many times to ping the relay. Defaults to 4.
+  /// How many times to ping the relay. Defaults to 8.
   count: usize,
   /// How long to wait before timing out a ping. Defaults to 750 ms.
   timeout: Duration,
@@ -51,7 +51,7 @@ impl RelayPingerConfig {
 impl Default for RelayPingerConfig {
   fn default() -> Self {
     Self {
-      count: 4,
+      count: 8,
       timeout: Duration::from_millis(750),
       interval: Duration::from_millis(1_000),
     }
