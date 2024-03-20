@@ -105,6 +105,7 @@ impl RelaysLoader {
   /// Returns the path to the relay file.
   pub fn resolve_path() -> Option<PathBuf> {
     let path = match consts::OS {
+      // NOTE: On Ubuntu and likely some other distros this is wrong.
       | "linux" => Some("/var/cache/mullvad-vpn/relays.json"),
       | "macos" => Some("/Library/Caches/mullvad-vpn/relays.json"),
       | "windows" => Some("C:/ProgramData/Mullvad VPN/cache/relays.json"),
