@@ -38,6 +38,9 @@ cargo install --locked --git https://github.com/norskeld/pingmole
 
 ## Distance calculation
 
+> [!NOTE]\
+> While pingmole automatically detects your geolocation using the [am.i.mullvad.net](https://am.i.mullvad.net/json) endpoint, I highly recommend specifying `latitude` and `longitude` via the corresponding CLI options to pinpoint your location. This is because often, detecting the geolocation using the IP address is simply wrong.
+
 Distance is calculated using the [haversine formula][haversine]. This affects the accuracy of the results, but generally it's good enough.
 
 ## Pinging
