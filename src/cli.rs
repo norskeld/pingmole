@@ -101,8 +101,11 @@ impl Spinner {
   }
 
   /// Sets the message of the spinner.
-  pub fn set_message(&self, message: &'static str) {
-    self.spinner.set_message(message);
+  pub fn set_message<S>(&self, message: S)
+  where
+    S: Into<String> + AsRef<str>,
+  {
+    self.spinner.set_message(message.into());
   }
 
   /// Stops the spinner and clears the message.

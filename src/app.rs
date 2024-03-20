@@ -25,7 +25,7 @@ pub async fn run() -> anyhow::Result<()> {
     | None => Coord::fetch().await?,
   };
 
-  thread::sleep(std::time::Duration::from_secs(1));
+  thread::sleep(Duration::from_secs(1));
 
   // -----------------------------------------------------------------------------------------------
   // 2. Load relays from file and filter them.
@@ -43,7 +43,12 @@ pub async fn run() -> anyhow::Result<()> {
 
   let relays = loader.load()?;
 
-  thread::sleep(std::time::Duration::from_secs(1));
+  thread::sleep(Duration::from_secs(1));
+
+  if relays.is_empty() {
+    spinner.stop();
+    anyhow::bail!("Couldn't find any relays");
+  }
 
   // -----------------------------------------------------------------------------------------------
   // 3. Ping relays.
