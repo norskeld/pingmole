@@ -5,8 +5,10 @@ use thiserror::Error;
 pub enum CoordError {
   #[error("Failed to fetch coordinates")]
   FetchFailed(reqwest::Error),
+
   #[error("Failed to parse response")]
   ParseResponseFailed(reqwest::Error),
+
   #[error("Failed to get latitude and longitude from the response")]
   GetCoordsFailed,
 }

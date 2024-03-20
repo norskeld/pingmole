@@ -28,12 +28,11 @@ pub async fn run() -> anyhow::Result<()> {
   thread::sleep(Duration::from_secs(1));
 
   // -----------------------------------------------------------------------------------------------
-  // 2. Load relays from file and filter them.
+  // 2. Load relays from file or API and filter them.
 
   spinner.set_message("Loading relays");
 
   let loader = RelaysLoader::new(
-    RelaysLoader::resolve_path()?,
     RelaysLoaderConfig { location },
     vec![
       Box::new(FilterByDistance::new(cli.distance as f64)),
@@ -41,7 +40,7 @@ pub async fn run() -> anyhow::Result<()> {
     ],
   );
 
-  let relays = loader.load()?;
+  let relays = loader.load().await?;
 
   thread::sleep(Duration::from_secs(1));
 

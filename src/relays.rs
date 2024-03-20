@@ -9,6 +9,24 @@ use thiserror::Error;
 use crate::coord::Coord;
 use crate::filters::Filter;
 
+/// Macro helper to simplify accessing JSON fields and casting them.
+macro_rules! get {
+  ($data:expr, $field:expr, $method:ident) => {
+    $data[$field]
+      .$method()
+      .ok_or_else(|| RelaysError::ParseFieldFailed(stringify!($field).into()))?
+  };
+}
+
+/// Macro to simplify accessing values in a JSON object (map).
+macro_rules! value {
+  ($data:expr, $field:expr) => {
+    $data
+      .get($field)
+      .ok_or_else(|| RelaysError::ParseFieldFailed($field.into()))?
+  };
+}
+
 #[derive(Debug, Error)]
 pub enum RelaysError {
   #[error("Failed to read the relay file: {path}")]
@@ -16,12 +34,18 @@ pub enum RelaysError {
     path: PathBuf,
     source: std::io::Error,
   },
+
   #[error("Failed to parse the relay file")]
   ParseFileFailed(serde_json::Error),
+
   #[error("Failed to parse the field {0}: it's either missing or malformed")]
   ParseFieldFailed(String),
-  #[error("Unsupported system: {0}")]
-  UnsupportedSystem(String),
+
+  #[error("Could not load relays from the Mullvad API")]
+  LoadRelaysFailed(reqwest::Error),
+
+  #[error("Failed to parse the response")]
+  ParseResponseFailed(reqwest::Error),
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -60,7 +84,7 @@ pub struct RelaysLoaderConfig {
 #[derive(Debug)]
 pub struct RelaysLoader {
   /// Path to the relay file.
-  path: PathBuf,
+  path: Option<PathBuf>,
   /// Configuration/additional data needed for loading.
   config: RelaysLoaderConfig,
   /// Filters to apply to the loaded relays.
@@ -68,11 +92,9 @@ pub struct RelaysLoader {
 }
 
 impl RelaysLoader {
-  pub fn new(
-    path: PathBuf,
-    config: RelaysLoaderConfig,
-    filters: Vec<Box<dyn Filter<Item = Relay>>>,
-  ) -> Self {
+  pub fn new(config: RelaysLoaderConfig, filters: Vec<Box<dyn Filter<Item = Relay>>>) -> Self {
+    let path = Self::resolve_path();
+
     Self {
       path,
       config,
@@ -81,15 +103,15 @@ impl RelaysLoader {
   }
 
   /// Returns the path to the relay file.
-  pub fn resolve_path() -> Result<PathBuf, RelaysError> {
+  pub fn resolve_path() -> Option<PathBuf> {
     let path = match consts::OS {
-      | "linux" => "/var/cache/mullvad-vpn/relays.json",
-      | "macos" => "/Library/Caches/mullvad-vpn/relays.json",
-      | "windows" => "C:/ProgramData/Mullvad VPN/cache/relays.json",
-      | system => return Err(RelaysError::UnsupportedSystem(system.to_string())),
+      | "linux" => Some("/var/cache/mullvad-vpn/relays.json"),
+      | "macos" => Some("/Library/Caches/mullvad-vpn/relays.json"),
+      | "windows" => Some("C:/ProgramData/Mullvad VPN/cache/relays.json"),
+      | _ => None,
     };
 
-    Ok(PathBuf::from(path))
+    path.map(PathBuf::from)
   }
 
   /// Parses a protocol stored in the `endpoint_data` field of a relay, which can be either of the
@@ -114,23 +136,28 @@ impl RelaysLoader {
     }
   }
 
-  /// Loads the relays from the relay file.
-  pub fn load(&self) -> Result<Vec<Relay>, RelaysError> {
-    /// Simple macro helper to simplify accessing JSON fields and casting them.
-    macro_rules! get {
-      ($data:expr, $field:expr, $method:ident) => {
-        $data[$field]
-          .$method()
-          .ok_or_else(|| RelaysError::ParseFieldFailed(stringify!($field).into()))?
-      };
+  /// Loads the relays, either from local file or from the API.
+  pub async fn load(&self) -> anyhow::Result<Vec<Relay>> {
+    if matches!(&self.path, Some(path) if path.try_exists().unwrap_or(false)) {
+      self.load_local()
+    } else {
+      self.load_remote().await
     }
+  }
 
-    let mut locations = Vec::new();
+  /// Loads the relays from the local file.
+  fn load_local(&self) -> anyhow::Result<Vec<Relay>> {
+    let mut results = Vec::new();
+
+    let path = match &self.path {
+      | Some(path) => path,
+      | None => return Ok(results),
+    };
 
     // Read into a string.
-    let data = fs::read_to_string(&self.path).map_err(|source| {
+    let data = fs::read_to_string(path).map_err(|source| {
       RelaysError::ReadFileFailed {
-        path: self.path.clone(),
+        path: path.to_owned(),
         source,
       }
     })?;
@@ -163,13 +190,69 @@ impl RelaysLoader {
 
             // There's no reason to filter inactive relays.
             if relay.is_active && self.filters.iter().all(|filter| filter.matches(&relay)) {
-              locations.push(relay);
+              results.push(relay);
             }
           }
         }
       }
     }
 
-    Ok(locations)
+    Ok(results)
+  }
+
+  /// Gets the relays using the [Mullvad API][api].
+  ///
+  /// [api]: https://api.mullvad.net/app/documentation/#/paths/~1v1~1relays/get
+  async fn load_remote(&self) -> anyhow::Result<Vec<Relay>> {
+    let mut results = Vec::new();
+
+    let response = reqwest::get("https://api.mullvad.net/app/v1/relays")
+      .await
+      .map_err(RelaysError::LoadRelaysFailed)?;
+
+    let data = response
+      .json::<Value>()
+      .await
+      .map_err(RelaysError::ParseResponseFailed)?;
+
+    let locations = get!(data, "locations", as_object);
+
+    let openvpn = get!(data, "openvpn", as_object);
+    let wireguard = get!(data, "wireguard", as_object);
+
+    for (protocol, relays) in [
+      (Protocol::OpenVPN, get!(openvpn, "relays", as_array)),
+      (Protocol::WireGuard, get!(wireguard, "relays", as_array)),
+    ] {
+      for relay in relays {
+        let location_code = get!(relay, "location", as_str).to_string();
+        let location = value!(locations, &location_code);
+
+        let coord = Coord::new(
+          get!(location, "latitude", as_f64),
+          get!(location, "longitude", as_f64),
+        );
+
+        let distance = self.config.location.distance_to(&coord);
+
+        let relay = Relay {
+          coord,
+          protocol,
+          distance,
+          ip: get!(relay, "ipv4_addr_in", as_str).to_string(),
+          city: get!(location, "city", as_str).to_string(),
+          country: get!(location, "country", as_str).to_string(),
+          is_active: get!(relay, "active", as_bool),
+          is_mullvad_owned: get!(relay, "owned", as_bool),
+        };
+
+        // There's no reason to filter inactive relays.
+        if relay.is_active && self.filters.iter().all(|filter| filter.matches(&relay)) {
+          results.push(relay);
+        }
+      }
+    }
+
+    Ok(results)
   }
 }
