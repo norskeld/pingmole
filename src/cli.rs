@@ -26,15 +26,15 @@ pub struct Cli {
   #[arg(short, long, value_enum)]
   pub sort_by: Option<SortBy>,
 
-  /// Set pings count to perform.
+  /// Set the number of pings to perform.
   #[arg(short, long, default_value_t = 8)]
   pub count: usize,
 
-  /// Set ping timeout (in ms).
+  /// Set the ping timeout (in ms).
   #[arg(long, default_value_t = 750)]
   pub timeout: u64,
 
-  /// Set ping interval (in ms).
+  /// Set the interval between pings (in ms).
   #[arg(long, default_value_t = 1000)]
   pub interval: u64,
 
