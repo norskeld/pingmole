@@ -1,8 +1,8 @@
 use std::sync::Arc;
-use std::thread;
 use std::time::Duration;
 
 use clap::Parser;
+use tokio::time;
 
 use crate::cli::{Cli, Spinner};
 use crate::coord::Coord;
@@ -18,14 +18,18 @@ pub async fn run() -> anyhow::Result<()> {
   // -----------------------------------------------------------------------------------------------
   // 1. Get the current location, either via arguments or via Mullvad API.
 
-  spinner.set_message("Getting current location");
-
   let location = match cli.latitude.zip(cli.longitude) {
     | Some((latitude, longitude)) => Coord::new(latitude, longitude),
-    | None => Coord::fetch().await?,
-  };
+    | None => {
+      spinner.set_message("Getting current location");
 
-  thread::sleep(Duration::from_secs(1));
+      let location = Coord::fetch().await?;
+
+      time::sleep(Duration::from_secs(1)).await;
+
+      location
+    },
+  };
 
   // -----------------------------------------------------------------------------------------------
   // 2. Load relays from file or API and filter them.
@@ -42,7 +46,7 @@ pub async fn run() -> anyhow::Result<()> {
 
   let relays = loader.load().await?;
 
-  thread::sleep(Duration::from_secs(1));
+  time::sleep(Duration::from_secs(1)).await;
 
   if relays.is_empty() {
     spinner.stop();
