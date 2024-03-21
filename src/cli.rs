@@ -39,11 +39,11 @@ pub struct Cli {
   pub interval: u64,
 
   /// Set the latitude.
-  #[arg(long = "lat", requires = "longitude")]
+  #[arg(long = "lat", requires = "longitude", allow_negative_numbers = true)]
   pub latitude: Option<f64>,
 
   /// Set the longitude.
-  #[arg(long = "lon", requires = "latitude")]
+  #[arg(long = "lon", requires = "latitude", allow_negative_numbers = true)]
   pub longitude: Option<f64>,
 }
 
