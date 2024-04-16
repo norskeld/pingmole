@@ -2,7 +2,7 @@
 name = "pingmole"
 version = "0.1.0"
 description = "CLI that helps to filter Mullvad servers and pick the closest one."
-authors = ["Vladislav Mamon <hello@vm.codes>"]
+authors = ["Vladislav Mamon <vlad@nrsk.dev>"]
 edition = "2021"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
